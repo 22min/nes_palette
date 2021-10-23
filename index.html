@@ -1,0 +1,227 @@
+<html>
+    <head>
+        <script>
+             const color_set = [
+                '585858',
+                '00237C',
+                '0D1099',
+                '300092',
+                '4F006C',
+                '600035',
+                '5C0500',
+                '461800',
+                '272D00',
+                '093E00',
+                '004500',
+                '004106',
+                '003545',
+                '000000',
+                '000000',
+                '000000',
+
+                'A1A1A1',
+                '0B53D7',
+                '3337FE',
+                '6621F7',
+                '9515BE',
+                'AC166E',
+                'A62721',
+                '864300',
+                '596200',
+                '2D7A00',
+                '0C8500',
+                '007F2A',
+                '006D85',
+                '000000',
+                '000000',
+                '000000',
+
+                'FFFFFF',
+                '51A5FE',
+                '8084FE',
+                'BC6AFE',
+                'F15BFE',
+                'FE5EC4',
+                'FE7269',
+                'E19321',
+                'ADB600',
+                '79D300',
+                '51DF21',
+                '3AD974',
+                '39C3DF',
+                '424242',
+                '000000',
+                '000000',
+
+                'FFFFFF',
+                'B5D9FE',
+                'CACAFE',
+                'E3BEFE',
+                'F9B8FE',
+                'FEBAE7',
+                'FEC3BC',
+                'F4D199',
+                'DEE086',
+                'C6EC87',
+                'B2F29D',
+                'A7F0C3',
+                'A8E7F0',
+                'ACACAC',
+                '000000',
+                '000000'
+            ];
+            var selected_color = undefined;
+            var selected_palette_idx = 0;
+            var palette_val = [];
+            function color_select(idx){
+                for(let i=0;i<16*4;i++){
+                    const button = document.getElementById('color-'+i.toString(10));
+                    button.style = 'height:2em; width:3em; border:solid 3px #EEEEEE; background-color: #'+ color_set[i] +';';
+                }
+                const button = document.getElementById('color-'+idx.toString(10));
+                button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[idx] +';';
+                if(selected_palette_idx != undefined){
+                    palette_val[selected_palette_idx] = idx;
+                    const button = document.getElementById('palette-'+selected_palette_idx.toString(10));
+                    button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[palette_val[selected_palette_idx]] +';';
+                    button.textContent = ('00' + palette_val[selected_palette_idx].toString(16)).slice(-2);
+                }
+            }
+            function change_palette(idx){
+                selected_palette_idx = idx;
+                color_select(palette_val[idx]);
+                let button;
+                for(let i=0;i<32;i++){
+                    button = document.getElementById('palette-'+i.toString(10));
+                    button.style = 'height:2em; width:3em; border:solid 3px #EEEEEE; background-color: #'+ color_set[palette_val[i]] +';';
+                    button.textContent = ('00' + palette_val[i].toString(16)).slice(-2);
+                }
+                button = document.getElementById('palette-'+idx.toString(10));
+                button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[palette_val[idx]] +';';
+                button.textContent = ('00' + palette_val[idx].toString(16)).slice(-2);
+            }
+            function download(){
+                //パレットデータをバイナリデータに書き出し
+                let buffer = new ArrayBuffer(32);
+                let dataview = new DataView(buffer);
+                for(let i=0; i<palette_val.length; i++){
+                    dataview.setUint8(i, palette_val[i]);
+                }
+                const blob = new Blob([buffer], {type:"octet/stream"});
+                const blob_url = window.URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                document.body.appendChild(a);
+                a.style = "display:none";
+                a.href = blob_url;
+                const file_name_elm = document.getElementById('palette-file-name');
+                let file_name = file_name_elm.value;
+                if(file_name == "" || file_name == ".pal"){
+                    const date = new Date();
+                    file_name = date.getFullYear()
+                        + ('0' + (date.getMonth() + 1)).slice(-2)
+                        + ('0' + date.getDate()).slice(-2)
+                        + '-' + ('0' + date.getHours()).slice(-2)
+                        + ('0' + date.getMinutes()).slice(-2)
+                        + ('0' + date.getSeconds()).slice(-2)
+                        //+'_'+('00' + date.getMilliseconds()).slice(-3) 
+                        + '.pal';
+                }
+                a.download = file_name;
+                a.click();
+                window.URL.revokeObjectURL(blob_url);
+            }
+            function file_load(input) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                /*
+                const download_file_name_elm = document.getElementById('palette-file-name');
+                download_file_name_elm.value = file.name;
+                */
+                reader.onload = () => {
+                    console.log(reader.result);
+                    //console.log(reader.result.byteLength);
+                    const dataview = new DataView(reader.result);
+                    if(dataview.byteLength == 32){
+                        palette_val = [];
+                        for(let i=0; i<32; i++){
+                            //console.log(dataview.getUint8(i));
+                            palette_val.push(dataview.getUint8(i));
+                        }
+                        change_palette(selected_palette_idx);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+                console.log(input.files);
+            }  
+            window.onload = function(){
+                
+                //collor set
+                const color_set_elem = document.getElementById('color-set');
+                var button;
+                for(let i=0; i<16*4; i++){
+                    button = document.createElement('button');
+                    button.textContent = ('00' + i.toString(16)).slice(-2);
+                    button.value = i.toString();
+                    button.id = 'color-'+i.toString(10);
+                    button.style = 'height:2em; width:3em; border:solid 3px #EEEEEE; background-color: #'+ color_set[i] +';';
+                    button.setAttribute('onclick','color_select(' + i.toString() + ');');
+                    color_set_elem.appendChild(button);
+                    if((i+1)%16 == 0){
+                        color_set_elem.appendChild(document.createElement('br'));
+                    }
+
+                }
+
+                //palette
+                const palette_elem = document.getElementById('palette');
+                const p = document.createElement('p');
+                p.textContent = 'Sprite Pallets';
+                palette_elem.appendChild(p);
+                for(let i=0; i<16*2; i++){
+                    button = document.createElement('button');
+                    palette_val.push(0);
+                    button.textContent = ('00' + palette_val[i].toString(16)).slice(-2);
+                    button.id = 'palette-'+i.toString(10);
+                    button.style = 'height:2em; width:3em; border:solid 3px #EEEEEE; background-color: #'+color_set[palette_val[i]]+';';
+                    button.setAttribute('onclick','change_palette(' + i.toString() + ');');
+                    palette_elem.appendChild(button);
+                    if((i+1)%4 == 0){
+                    //if((i+1)%16 == 0){
+                        palette_elem.appendChild(document.createElement('br'));
+                    }
+                    if(i == 15){
+                        const p = document.createElement('p');
+                        p.textContent = 'Backgound Pallets';
+                        palette_elem.appendChild(p);
+                        //palette_elem.appendChild(document.createElement('br'));
+                    }
+                }
+                /*
+                var button = document.createElement('button');
+                button.textContent = 'button';
+                button.setAttribute('id', 'button-1');
+                //button.setAttribute('style', 'width:100px; margin:5em; border:solid 3px #000000; background-color: #ccc;');
+                button.setAttribute('style', 'width:100px; border:solid 3px #000000; background-color: #ccc;');
+                palette_elem.appendChild(button);
+                */
+            }
+        </script>
+    </head>
+    <body>
+        <h1>NES Palette Editor</h1>
+        <h2>Color Set</h2>
+        <div id="color-set"></div>
+        <div id="palette"></div>
+        <!--
+            
+        -->
+        <p>
+            Upload : <input type="file" oninput="file_load(this)">
+        </p>
+        <p>
+            Download : <input type="text" value=".pal" id="palette-file-name">
+            <button onclick="download();">Download</button>
+        </p>
+    </body>
+</html>
