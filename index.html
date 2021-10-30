@@ -1,5 +1,17 @@
 <html>
     <head>
+        <style>
+            .color-button{
+                height:2em;
+                width:3em; 
+                border:solid 2px #EEE; 
+                font-weight: bold;
+                color: #EEE;
+                text-stroke: 0.5px #FFF;
+                -webkit-text-stroke: 0.5px #FFF;
+                
+            }
+        </style>
         <script>
              const color_set = [
                 '585858',
@@ -71,41 +83,97 @@
                 '000000'
             ];
             var selected_color = undefined;
-            var selected_palette_idx = 0;
+            var selected_i = 0;
+            var selected_j = 0;
             var palette_val = [];
+            var sprite_canvas_map = [];
+            var sprite_palette_list = [];
+            var sprite_color_map = [];
             function color_select(idx){
+                var button;
                 for(let i=0;i<16*4;i++){
-                    const button = document.getElementById('color-'+i.toString(10));
-                    button.style = 'height:2em; width:3em; border:solid 3px #EEEEEE; background-color: #'+ color_set[i] +';';
+                    button = document.getElementById('color-'+i.toString(10));
+                    button.style = 'background-color: #'+ color_set[i] +';';
                 }
-                const button = document.getElementById('color-'+idx.toString(10));
+                button = document.getElementById('color-'+idx.toString(10));
+                //console.log(idx.toString(10));
+                //console.log(button);
                 button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[idx] +';';
-                if(selected_palette_idx != undefined){
-                    palette_val[selected_palette_idx] = idx;
-                    const button = document.getElementById('palette-'+selected_palette_idx.toString(10));
-                    button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[palette_val[selected_palette_idx]] +';';
-                    button.textContent = ('00' + palette_val[selected_palette_idx].toString(16)).slice(-2);
+                
+                //if(selected_palette_idx != undefined){
+                palette_val[selected_i][selected_j] = idx;
+                button = document.getElementById('palette-'+selected_i.toString(10) + '-' +selected_j.toString(10));
+                button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[palette_val[selected_i][selected_j]] +';';
+                button.textContent = ('00' + palette_val[selected_i][selected_j].toString(16)).slice(-2);
+                //}
+            }
+            function change_palette(pos_i, pos_j){
+                //update_sprite_canvas();
+                selected_i = pos_i;
+                selected_j = pos_j;
+                sprite_palette_list[0] = pos_i;
+                color_select(palette_val[selected_i][selected_j]);
+                let button;
+                for(let i=0; i<8; i++){
+                    for(let j=0; j<4; j++){
+                        button = document.getElementById('palette-'+i.toString(10)+'-'+j.toString(10));
+                        button.style = 'background-color: #' + color_set[palette_val[i][j]] +';';
+                        button.textContent = ('00' + palette_val[i][j].toString(16)).slice(-2);
+                    }
+                }
+                button = document.getElementById('palette-' + selected_i.toString(10) + '-' + selected_j.toString(10));
+                button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[palette_val[selected_i][selected_j]] +';';
+                button.textContent = ('00' + palette_val[selected_i][selected_j].toString(16)).slice(-2);
+                update_sprite_canvas();
+            }
+            function change_sprite_canvas(i, j){
+                //update_sprite_canvas();
+                //const dot_elem = document.getElementById('sprite-canvas-dot-'+i+'-'+j);
+                //dot_elem.style = 'height:1em; width:1em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][selected_j]];
+                sprite_canvas_map[i][j] = selected_j;
+                update_sprite_canvas();
+            }
+            function update_sprite_canvas(){
+                for(let i=0; i<sprite_canvas_map.length; i++){
+                    for(let j=0; j<sprite_canvas_map[0].length;j++){
+                        //console.log(sprite_canvas_map);
+                        const dot_elem = document.getElementById('sprite-canvas-dot-'+i+'-'+j);
+                        dot_elem.style = 'height:1em; width:1em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_canvas_map[i][j]]];
+                    }
                 }
             }
-            function change_palette(idx){
-                selected_palette_idx = idx;
-                color_select(palette_val[idx]);
-                let button;
-                for(let i=0;i<32;i++){
-                    button = document.getElementById('palette-'+i.toString(10));
-                    button.style = 'height:2em; width:3em; border:solid 3px #EEEEEE; background-color: #'+ color_set[palette_val[i]] +';';
-                    button.textContent = ('00' + palette_val[i].toString(16)).slice(-2);
+            function update_sprite_map(){
+                //sprite map
+                const canvas = document.getElementById('sprite-map');
+                const context = canvas.getContext('2d');
+                const pixel_size = 4;
+                
+                //console.log(canvas);
+                //for(let i=0;i<128*4;i++){
+                //    for(let j=0;j<128;j++){
+                for(let f=0; f<1024; f++){
+                    for(let i=0; i<8; i++){
+                        //console.log(sprite_color_map[f][i]);
+                        for(let j=0; j<8; j++){
+                            context.fillStyle = '#'+color_set[palette_val[selected_i][sprite_color_map[f][i][j]]];
+                            
+                            const pos_x = ((f%16)*pixel_size)*8 + j*pixel_size;
+                            const pos_y = parseInt(f/16)*8*pixel_size + i*pixel_size;
+                            context.fillRect(pos_x, pos_y, pixel_size, pixel_size);
+                        }
+                    }
                 }
-                button = document.getElementById('palette-'+idx.toString(10));
-                button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[palette_val[idx]] +';';
-                button.textContent = ('00' + palette_val[idx].toString(16)).slice(-2);
+                context.strokeStyle = "rgb(255,0,0)";
+                context.strokeRect(0,0,4*16,4*16);
             }
             function download(){
                 //パレットデータをバイナリデータに書き出し
                 let buffer = new ArrayBuffer(32);
                 let dataview = new DataView(buffer);
-                for(let i=0; i<palette_val.length; i++){
-                    dataview.setUint8(i, palette_val[i]);
+                for(let i=0; i<8; i++){
+                    for(let j=0; j<4;j++){
+                        dataview.setUint8(i*4+j, palette_val[i][j]);
+                    }
                 }
                 const blob = new Blob([buffer], {type:"octet/stream"});
                 const blob_url = window.URL.createObjectURL(blob);
@@ -131,7 +199,7 @@
                 a.click();
                 window.URL.revokeObjectURL(blob_url);
             }
-            function file_load(input) {
+            function file_load(input){
                 const file = input.files[0];
                 const reader = new FileReader();
                 /*
@@ -140,20 +208,68 @@
                 */
                 reader.onload = () => {
                     console.log(reader.result);
-                    //console.log(reader.result.byteLength);
                     const dataview = new DataView(reader.result);
+                    
                     if(dataview.byteLength == 32){
-                        palette_val = [];
-                        for(let i=0; i<32; i++){
-                            //console.log(dataview.getUint8(i));
-                            palette_val.push(dataview.getUint8(i));
+                        for(let i=0; i<8; i++){
+                            for(let j=0; j<4; j++){
+                                palette_val[i][j]=dataview.getUint8(i*4+j);
+                            }
                         }
-                        change_palette(selected_palette_idx);
+                        change_palette(selected_i, selected_j);
                     }
+                    update_sprite_canvas();
                 };
                 reader.readAsArrayBuffer(file);
                 console.log(input.files);
-            }  
+            }
+            function load_sprite_bitmap(input){
+                console.log('load_sprite_bitmap');
+                const file = input.files[0];
+                const reader = new FileReader();
+                //let tmp = [];
+                sprite_color_map = [];
+                reader.onload = () => {
+                    console.log(reader.result);
+                    const dataview = new DataView(reader.result);
+                    for(let f=0; f<512; f++){
+                        sprite_color_map.push([]);
+                        for(let i=0; i<8; i++){
+                            let value = dataview.getUint8(f*2*8+i);
+                            const bitmap1_row = ( '00000000' + value.toString(2)).slice(-8);
+                            value = dataview.getUint8((f*2+1)*8+i);
+                            const bitmap2_row = ( '00000000' + value.toString(2)).slice(-8);
+                            sprite_color_map[f].push([]);
+                            for(let j=0;j<bitmap1_row.length;j++){
+                                if(bitmap1_row[j]=='0' && bitmap2_row[j]=='0'){
+                                    sprite_color_map[f][i].push(0);
+                                }else if(bitmap1_row[j]=='1' && bitmap2_row[j]=='1'){
+                                    sprite_color_map[f][i].push(3);
+                                }else if(bitmap1_row[j]=='1'){
+                                    sprite_color_map[f][i].push(1);
+                                }else{
+                                    sprite_color_map[f][i].push(2);
+                                }
+                            }
+                            //console.log(sprite_color_map[f][i]);
+                        }
+                    }
+                    update_sprite_map();
+                    //if(dataview.byteLength == 32){
+                    /*
+                    for(let i=0; i<8; i++){
+                        for(let j=0; j<8; j++){
+
+                        }
+                    }*/
+                    //}
+                }
+                reader.readAsArrayBuffer(file);
+            }
+            function getRandomInt(max) {
+                return Math.floor(Math.random() * max);
+            }
+
             window.onload = function(){
                 
                 //collor set
@@ -164,7 +280,8 @@
                     button.textContent = ('00' + i.toString(16)).slice(-2);
                     button.value = i.toString();
                     button.id = 'color-'+i.toString(10);
-                    button.style = 'height:2em; width:3em; border:solid 3px #EEEEEE; background-color: #'+ color_set[i] +';';
+                    button.style = 'background-color: #'+ color_set[i] +';';
+                    button.setAttribute('class', 'color-button');
                     button.setAttribute('onclick','color_select(' + i.toString() + ');');
                     color_set_elem.appendChild(button);
                     if((i+1)%16 == 0){
@@ -178,13 +295,37 @@
                 const p = document.createElement('p');
                 p.textContent = 'Sprite Pallets';
                 palette_elem.appendChild(p);
-                for(let i=0; i<16*2; i++){
+                //for(let i=0; i<16*2; i++){
+                for(let i=0; i<8; i++){
+                    palette_val.push([]);
+                    for(let j=0; j<4; j++){
+                        button = document.createElement('button');
+                        palette_val[i].push(0);
+                        button.textContent = ('00' + palette_val[i][j].toString(16)).slice(-2);
+                        button.id = 'palette-'+i.toString(10)+'-'+j.toString(10);
+                        button.style = 'background-color: #'+color_set[palette_val[i][j]]+';';
+                        button.setAttribute('class', 'color-button');
+                        button.setAttribute('onclick','change_palette(' + i.toString(10) + ',' + j.toString(10) + ');');
+                        palette_elem.appendChild(button);
+                    }
+                    palette_elem.appendChild(document.createElement('br'));
+                    if(i == 3){
+                        const p = document.createElement('p');
+                        p.textContent = 'Backgound Pallets';
+                        palette_elem.appendChild(p);
+                    }
+                }
+                /*
                     button = document.createElement('button');
-                    palette_val.push(0);
+                    if(i % 4 == 0){
+                        palette_val.push([]);
+                    }
+
+                    palette_val[parseInt(i/4, 10)].push(0);
                     button.textContent = ('00' + palette_val[i].toString(16)).slice(-2);
                     button.id = 'palette-'+i.toString(10);
                     button.style = 'height:2em; width:3em; border:solid 3px #EEEEEE; background-color: #'+color_set[palette_val[i]]+';';
-                    button.setAttribute('onclick','change_palette(' + i.toString() + ');');
+                    button.setAttribute('onclick','change_palette(' + i.toString(10) + ');');
                     palette_elem.appendChild(button);
                     if((i+1)%4 == 0){
                     //if((i+1)%16 == 0){
@@ -197,14 +338,41 @@
                         //palette_elem.appendChild(document.createElement('br'));
                     }
                 }
-                /*
-                var button = document.createElement('button');
-                button.textContent = 'button';
-                button.setAttribute('id', 'button-1');
-                //button.setAttribute('style', 'width:100px; margin:5em; border:solid 3px #000000; background-color: #ccc;');
-                button.setAttribute('style', 'width:100px; border:solid 3px #000000; background-color: #ccc;');
-                palette_elem.appendChild(button);
                 */
+                
+                //sprite canvas
+                const sprite_canvas_elem = document.getElementById('sprite-canvas');
+                sprite_palette_list.push(0);
+                for(let i=0; i<8; i++){
+                    sprite_canvas_map.push([]);
+                    for(let j=0; j<8; j++){
+                        button = document.createElement('button');
+                        //button.style = 'height:1em; width:1em; background-color:#AAAAAA;';
+                        button.style = 'height:1em; width:1em; background-color:#'+ color_set[palette_val[0][0]] +';';
+                        sprite_canvas_map[i].push(0);
+                        button.id = 'sprite-canvas-dot-' + i.toString(10) + '-' + j;
+                        button.setAttribute('onclick', 'change_sprite_canvas(' + i.toString(10) + ', ' + j.toString(10) + ');');
+                        sprite_canvas_elem.appendChild(button);
+                    }
+                    sprite_canvas_elem.appendChild(document.createElement('br'));
+                }
+                //sprite map
+                const canvas = document.getElementById('sprite-map');
+                const context = canvas.getContext('2d');
+                context.fillStyle = "#DDDDDD";
+                context.fillRect(0,0,512,1024);
+                for(let i=0;i<128*4;i++){
+                    for(let j=0;j<128;j++){
+                        //color_code = 'rgb(' + getRandomInt(255) + ',' +
+                        //    getRandomInt(255) + ',' + getRandomInt(255)+')';
+                        //console.log(color_code);
+                        //context.fillStyle = color_code;
+                        context.fillStyle = palette_val[0][0];
+                        context.fillRect(i*4,j*4,4,4);
+                    }
+                }
+                context.strokeStyle = "rgb(255,0,0)";
+                context.strokeRect(0,0,4*16,4*16);
             }
         </script>
     </head>
@@ -213,15 +381,20 @@
         <h2>Color Set</h2>
         <div id="color-set"></div>
         <div id="palette"></div>
-        <!--
-            
-        -->
         <p>
-            Upload : <input type="file" oninput="file_load(this)">
+            Upload : <input type="file" oninput="file_load(this);">
         </p>
         <p>
             Download : <input type="text" value=".pal" id="palette-file-name">
             <button onclick="download();">Download</button>
         </p>
+        <div id="sprite-canvas"></div>
+        <canvas id="sprite-map" width="512" height="1024" style="border-color: #888888;"></canvas>
+        <p>
+            Upload Sprite File : <input type="file" oninput="load_sprite_bitmap(this);">
+        </p>
+        <!--
+            128dot x 128dot?
+        -->
     </body>
 </html>
