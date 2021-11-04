@@ -130,6 +130,7 @@
                 button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[palette_val[selected_i][selected_j]] +';';
                 button.textContent = ('00' + palette_val[selected_i][selected_j].toString(16)).slice(-2);
                 update_sprite_canvas();
+                update_sprite_map();
             }
             function change_sprite_canvas(i, j){
                 //update_sprite_canvas();
@@ -203,6 +204,9 @@
                 }
                 //context.strokeStyle = "rgb(255,0,0)";
                 //context.strokeRect(0,0,4*16,4*16);
+                if(selected_area){
+                    context.strokeRect(selected_area.x, selected_area.y, 4*16, 4*16);
+                }
             }
             function download(){
                 //パレットデータをバイナリデータに書き出し
@@ -257,6 +261,7 @@
                         change_palette(selected_i, selected_j);
                     }
                     update_sprite_canvas();
+                    update_sprite_map();
                 };
                 reader.readAsArrayBuffer(file);
                 console.log(input.files);
@@ -306,7 +311,57 @@
                 reader.readAsArrayBuffer(file);
             }
             function download_sprite_file(){
-                
+                let buffer = new ArrayBuffer(16*16*2*2*8);
+                let dataview = new DataView(buffer);
+                for(let i=0; i<16*16*2; i++){
+                    for(let j=0; j<8; j++){
+                        let bitmap_row1 = '';
+                        let bitmap_row2 = '';
+                        for(let k=0; k<8;k++){
+                            if(sprite_color_map[i][j][k]==0){
+                                bitmap_row1 += '0';
+                                bitmap_row2 += '0';
+                            }else if(sprite_color_map[i][j][k]==1){
+                                bitmap_row1 += '1';
+                                bitmap_row2 += '0';
+                            }else if(sprite_color_map[i][j][k]==2){
+                                bitmap_row1 += '0';
+                                bitmap_row2 += '1';
+                            }else{
+                                bitmap_row1 += '1';
+                                bitmap_row2 += '1';
+                            }
+                        }
+                        console.log((i*2)*8 + j, (i*2+1)*8 + j);
+                        dataview.setUint8((i*2)*8 + j, parseInt(bitmap_row1, 2));
+                        dataview.setUint8((i*2+1)*8 + j, parseInt(bitmap_row2, 2));
+                    }
+                }
+
+                const blob = new Blob([buffer], {type:"octet/stream"});
+                const blob_url = window.URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                document.body.appendChild(a);
+                a.style = "display:none";
+                a.href = blob_url;
+                const file_name_elm = document.getElementById('sprite-file-name');
+                let file_name = file_name_elm.value;
+                if(file_name == "" || file_name == ".chr"){
+                    const date = new Date();
+                    file_name = date.getFullYear()
+                        + ('0' + (date.getMonth() + 1)).slice(-2)
+                        + ('0' + date.getDate()).slice(-2)
+                        + '-' + ('0' + date.getHours()).slice(-2)
+                        + ('0' + date.getMinutes()).slice(-2)
+                        + ('0' + date.getSeconds()).slice(-2)
+                        //+'_'+('00' + date.getMilliseconds()).slice(-3) 
+                        + '.chr';
+                }
+                a.download = file_name;
+                a.click();
+                window.URL.revokeObjectURL(blob_url);
+
             }
             function getRandomInt(max) {
                 return Math.floor(Math.random() * max);
@@ -398,6 +453,18 @@
                     sprite_canvas_elem.appendChild(document.createElement('br'));
                 }
                 //sprite map
+
+
+                for(let i=0;i<16*16*2;i++){
+                    sprite_color_map.push([])
+                    for(let j=0;j<8;j++){
+                        sprite_color_map[i].push([])
+                        for(let k=0;k<8;k++){
+                            //sprite_color_map[i][j][k] = 0;
+                            sprite_color_map[i][j].push(0);
+                        }
+                    }
+                }
                 //const canvas = document.getElementById('sprite-map');
                 //const context = canvas.getContext('2d');
                 const canvas = document.getElementById('sprite-map');
@@ -427,9 +494,12 @@
                     };
                     //point.x / (4*8) + point.y / 8 ;
                     console.log(point.x, point.y);
-                    update_sprite_map();
+                    
                     context.strokeStyle = "rgb(255,0,0)";
-                    context.strokeRect(parseInt(point.x/64)*64, parseInt(point.y/64)*64, 4*16, 4*16);
+                    selected_area.x = parseInt(point.x/64)*64;
+                    selected_area.y = parseInt(point.y/64)*64;
+                    update_sprite_map();
+                    //context.strokeRect(selected_area.x, selected_area.y, 4*16, 4*16);
                     //selected_area.x = parseInt(point.x/(4*16));
                     //selected_area.y = parseInt(point.y/(4*16));
                     let x = parseInt(point.x/(4*16))*2;
@@ -459,7 +529,7 @@
             Upload Sprite File : <input type="file" oninput="load_sprite_bitmap(this);">
         </p>
         <p>
-            Download Sprite File : <input type="text" value=".pal" id="palette-file-name">
+            Download Sprite File : <input type="text" value=".chr" id="sprite-file-name">
             <button onclick="download_sprite_file();">Download</button>
         </p>
         <!--
