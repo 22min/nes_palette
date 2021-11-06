@@ -111,6 +111,9 @@
                 button.style = 'height:2em; width:3em; border:solid 3px #75ADF4; background-color: #'+ color_set[palette_val[selected_i][selected_j]] +';';
                 button.textContent = ('00' + palette_val[selected_i][selected_j].toString(16)).slice(-2);
                 //}
+                update_sprite_canvas();
+                update_sprite_map();
+
             }
             function change_palette(pos_i, pos_j){
                 //update_sprite_canvas();
@@ -332,7 +335,7 @@
                                 bitmap_row2 += '1';
                             }
                         }
-                        console.log((i*2)*8 + j, (i*2+1)*8 + j);
+                        //console.log((i*2)*8 + j, (i*2+1)*8 + j);
                         dataview.setUint8((i*2)*8 + j, parseInt(bitmap_row1, 2));
                         dataview.setUint8((i*2+1)*8 + j, parseInt(bitmap_row2, 2));
                     }
@@ -493,7 +496,7 @@
                         y: e.clientY - rect.top
                     };
                     //point.x / (4*8) + point.y / 8 ;
-                    console.log(point.x, point.y);
+                    //console.log(point.x, point.y);
                     
                     context.strokeStyle = "rgb(255,0,0)";
                     selected_area.x = parseInt(point.x/64)*64;
@@ -504,7 +507,7 @@
                     //selected_area.y = parseInt(point.y/(4*16));
                     let x = parseInt(point.x/(4*16))*2;
                     let y = parseInt(point.y/(4*16))*32;
-                    console.log(x,y);
+                    //console.log(x,y);
                     selected_area.i =x+y;
                     update_sprite_canvas();
                 });
@@ -512,7 +515,7 @@
         </script>
     </head>
     <body>
-        <h1>NES Palette Editor</h1>
+        <h1>NES Graphics Editor</h1>
         <h2>Color Set</h2>
         <div id="color-set"></div>
         <div id="palette"></div>
