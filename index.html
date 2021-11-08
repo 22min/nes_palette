@@ -11,6 +11,13 @@
                 -webkit-text-stroke: 0.5px #FFF;
                 
             }
+            .block{
+                justify-content:center;
+                align-items:center;
+            }
+            .wrap{
+                display:flex;
+            }
         </style>
         <script>
              const color_set = [
@@ -142,7 +149,7 @@
                 //sprite_edit_canvas[i][j] = selected_j;
                 //update_sprite_canvas();
                 const dot_elem = document.getElementById('sprite-canvas-dot-'+i+'-'+j);
-                dot_elem.style = 'height:1em; width:1em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][selected_j]];
+                dot_elem.style = 'height:2em; width:2em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][selected_j]];
                 //console.log(i,j,selected_area.i);
                 //console.log(sprite_color_map);
                 if(i<8 && j < 8){
@@ -170,16 +177,16 @@
                 for(let i=0; i<sprite_color_map[0].length; i++){
                     for(let j=0; j<sprite_color_map[0][0].length; j++){
                         let dot_elem = document.getElementById('sprite-canvas-dot-'+i+'-'+j);
-                        dot_elem.style = 'height:1em; width:1em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_color_map[selected_area.i][i][j]]];
+                        dot_elem.style = 'height:2em; width:2em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_color_map[selected_area.i][i][j]]];
 
                         dot_elem = document.getElementById('sprite-canvas-dot-' + (i+8) + '-' + j );
-                        dot_elem.style = 'height:1em; width:1em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_color_map[selected_area.i+16][i][j]]];
+                        dot_elem.style = 'height:2em; width:2em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_color_map[selected_area.i+16][i][j]]];
 
                         dot_elem = document.getElementById('sprite-canvas-dot-' + i + '-' + (j+8) );
-                        dot_elem.style = 'height:1em; width:1em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_color_map[selected_area.i+1][i][j]]];
+                        dot_elem.style = 'height:2em; width:2em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_color_map[selected_area.i+1][i][j]]];
 
                         dot_elem = document.getElementById('sprite-canvas-dot-' + (i+8) + '-' + (j+8) );
-                        dot_elem.style = 'height:1em; width:1em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_color_map[selected_area.i+17][i][j]]];
+                        dot_elem.style = 'height:2em; width:2em; background-color:#' + color_set[palette_val[sprite_palette_list[0]][sprite_color_map[selected_area.i+17][i][j]]];
                     }
 
                 }
@@ -188,7 +195,7 @@
                 //sprite map
                 const canvas = document.getElementById('sprite-map');
                 const context = canvas.getContext('2d');
-                const pixel_size = 4;
+                const pixel_size = 3;
                 
                 //console.log(canvas);
                 //for(let i=0;i<128*4;i++){
@@ -208,7 +215,7 @@
                 //context.strokeStyle = "rgb(255,0,0)";
                 //context.strokeRect(0,0,4*16,4*16);
                 if(selected_area){
-                    context.strokeRect(selected_area.x, selected_area.y, 4*16, 4*16);
+                    context.strokeRect(selected_area.x, selected_area.y, pixel_size*16, pixel_size*16);
                 }
             }
             function download(){
@@ -369,9 +376,56 @@
             function getRandomInt(max) {
                 return Math.floor(Math.random() * max);
             }
-            
+            function palette_nesasm_gen(){
+                //パレットデータを格納するNESASMのコードを生成
+                const textarea = document.getElementById('palette-nesasm');
+                textarea.value = "spritePalette:\n";
+                for(let i=0;i<8;i++){
+                    textarea.value += "    .db " + palette_val[i].map(x => "$" + ("00" +x.toString(16)).slice(-2) ).join(", ") + "\n";
+                    if(i==3){
+                        textarea.value += "backgroundPalette:\n"
+                    }
+                }
+                textarea.select();
+            }
+            function chr_nesasm_gen(){
+                const textarea = document.getElementById('chr-nesasm');
+                textarea.value += "loadSpriteChr: \n";
+                for(let i=0; i<16*16*2; i++){
+                    let val_list = [];
+                    for(let j=0; j<8; j++){
+                        let bitmap_row1 = '';
+                        let bitmap_row2 = '';
+                        for(let k=0; k<8;k++){
+                            if(sprite_color_map[i][j][k]==0){
+                                bitmap_row1 += '0';
+                                bitmap_row2 += '0';
+                            }else if(sprite_color_map[i][j][k]==1){
+                                bitmap_row1 += '1';
+                                bitmap_row2 += '0';
+                            }else if(sprite_color_map[i][j][k]==2){
+                                bitmap_row1 += '0';
+                                bitmap_row2 += '1';
+                            }else{
+                                bitmap_row1 += '1';
+                                bitmap_row2 += '1';
+                            }
+                        }
+                        val_list.push( ( 00 + parseInt(bitmap_row1, 2).toString(16) ).slice(-2) );
+                        val_list.push( ( 00 + parseInt(bitmap_row2, 2).toString(16) ).slice(-2) );
+                    }
+                    textarea.value += "    .db " + val_list.map(x => "$"+x).join(", ") + "\n";
+                    if(i==16){textarea.value += "loadBackgroundChr: \n"}
+                }
+                textarea.select();
+            }
+
+
             window.onload = function(){
+                const textarea = document.getElementById('palette-nesasm');
+                textarea.value = "";
                 //collor set
+                const pixel_size = 3;
                 const color_set_elem = document.getElementById('color-set');
                 var button;
                 for(let i=0; i<16*4; i++){
@@ -391,9 +445,11 @@
 
                 //palette
                 const palette_elem = document.getElementById('palette');
+                let block = document.createElement('div');
+                block.setAttribute('class', 'block');
                 const p = document.createElement('p');
-                p.textContent = 'Sprite Pallets';
-                palette_elem.appendChild(p);
+                p.textContent = 'Sprite Palettes';
+                block.appendChild(p);
                 //for(let i=0; i<16*2; i++){
                 for(let i=0; i<8; i++){
                     palette_val.push([]);
@@ -405,13 +461,17 @@
                         button.style = 'background-color: #'+color_set[palette_val[i][j]]+';';
                         button.setAttribute('class', 'color-button');
                         button.setAttribute('onclick','change_palette(' + i.toString(10) + ',' + j.toString(10) + ');');
-                        palette_elem.appendChild(button);
+                        block.appendChild(button);
                     }
-                    palette_elem.appendChild(document.createElement('br'));
+                    block.appendChild(document.createElement('br'));
                     if(i == 3){
+                        palette_elem.appendChild(block);
                         const p = document.createElement('p');
-                        p.textContent = 'Backgound Pallets';
-                        palette_elem.appendChild(p);
+                        p.textContent = 'Backgound Paletts';
+                        block = document.createElement('div');
+                        block.setAttribute('class', 'block');
+                        block.appendChild(p);
+                        palette_elem.appendChild(block);
                     }
                 }
                 /*
@@ -446,8 +506,8 @@
                     //sprite_edit_canvas.push([]);
                     for(let j=0; j<16; j++){
                         button = document.createElement('button');
-                        //button.style = 'height:1em; width:1em; background-color:#AAAAAA;';
-                        button.style = 'height:1em; width:1em; background-color:#'+ color_set[palette_val[0][0]] +';';
+                        //button.style = 'height:2em; width:2em; background-color:#AAAAAA;';
+                        button.style = 'height:2em; width:2em; background-color:#'+ color_set[palette_val[0][0]] +';';
                         //sprite_edit_canvas[i].push(0);
                         button.id = 'sprite-canvas-dot-' + i.toString(10) + '-' + j;
                         button.setAttribute('onclick', 'change_sprite_canvas(' + i.toString(10) + ', ' + j.toString(10) + ');');
@@ -482,11 +542,11 @@
                         //console.log(color_code);
                         //context.fillStyle = color_code;
                         context.fillStyle = palette_val[0][0];
-                        context.fillRect(i*4,j*4,4,4);
+                        context.fillRect(i*pixel_size, j*pixel_size, pixel_size, pixel_size);
                     }
                 }
                 context.strokeStyle = "rgb(255,0,0)";
-                context.strokeRect(0,0,4*16,4*16);
+                context.strokeRect(0, 0, pixel_size*16, pixel_size*16);
 
                 canvas.addEventListener("click", e => {
                     // マウスの座標をCanvas内の座標とあわせるため
@@ -499,14 +559,14 @@
                     //console.log(point.x, point.y);
                     
                     context.strokeStyle = "rgb(255,0,0)";
-                    selected_area.x = parseInt(point.x/64)*64;
-                    selected_area.y = parseInt(point.y/64)*64;
+                    selected_area.x = parseInt(point.x/(16*pixel_size))*16*pixel_size;
+                    selected_area.y = parseInt(point.y/(16*pixel_size))*16*pixel_size;
                     update_sprite_map();
                     //context.strokeRect(selected_area.x, selected_area.y, 4*16, 4*16);
                     //selected_area.x = parseInt(point.x/(4*16));
                     //selected_area.y = parseInt(point.y/(4*16));
-                    let x = parseInt(point.x/(4*16))*2;
-                    let y = parseInt(point.y/(4*16))*32;
+                    let x = parseInt(point.x/(pixel_size*16))*2;
+                    let y = parseInt(point.y/(pixel_size*16))*32;
                     //console.log(x,y);
                     selected_area.i =x+y;
                     update_sprite_canvas();
@@ -515,26 +575,49 @@
         </script>
     </head>
     <body>
-        <h1>NES Graphics Editor</h1>
-        <h2>Color Set</h2>
-        <div id="color-set"></div>
-        <div id="palette"></div>
-        <p>
-            Upload : <input type="file" oninput="file_load(this);">
-        </p>
-        <p>
-            Download : <input type="text" value=".pal" id="palette-file-name">
-            <button onclick="download();">Download</button>
-        </p>
-        <div id="sprite-canvas"></div>
-        <canvas id="sprite-map" width="512" height="1024" style="border-color: #888888;"></canvas>
-        <p>
-            Upload Sprite File : <input type="file" oninput="load_sprite_bitmap(this);">
-        </p>
-        <p>
-            Download Sprite File : <input type="text" value=".chr" id="sprite-file-name">
-            <button onclick="download_sprite_file();">Download</button>
-        </p>
+        <div class="wrap">
+
+            <div class="block">
+                
+                <canvas id="sprite-map" width="384" height="768" style="border-color: #888888;"></canvas>
+                <p>
+                    Upload Sprite File : <input type="file" oninput="load_sprite_bitmap(this);">
+                </p>
+                <p>
+                    Download Sprite File : <input type="text" value=".chr" id="sprite-file-name">
+                    <button onclick="download_sprite_file();">Download</button>
+                </p>
+                <p>
+                    <button onclick="chr_nesasm_gen();">NESASM</button>
+                    <br>
+                    <textarea id="chr-nesasm" onfocus="this.select();"></textarea>
+                </p>
+                
+            </div>
+            <div class="block">
+                <div id="sprite-canvas"></div>
+                <div id="palette" class="wrap" style="gap:1em;"></div>
+
+                <p>Color Set</p>
+                <div id="color-set"></div>
+                <br>
+                <p>
+                    Upload : <input type="file" oninput="file_load(this);">
+                </p>
+                <p>
+                    Download : <input type="text" value=".pal" id="palette-file-name">
+                    <button onclick="download();">Download</button>
+                </p>
+                <p>
+                    <button onclick="palette_nesasm_gen();">NESASM</button>
+                    <br>
+                    <textarea id="palette-nesasm" rows="10" cols="30" onfocus="this.select();"></textarea>
+                </p>
+            </div>
+
+
+        </body>
+
         <!--
             128dot x 128dot?
         -->
