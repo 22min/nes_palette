@@ -392,7 +392,8 @@
                 const textarea = document.getElementById('chr-nesasm');
                 textarea.value += "loadSpriteChr: \n";
                 for(let i=0; i<16*16*2; i++){
-                    let val_list = [];
+                    let table1 = [];
+                    let table2 = [];
                     for(let j=0; j<8; j++){
                         let bitmap_row1 = '';
                         let bitmap_row2 = '';
@@ -411,11 +412,16 @@
                                 bitmap_row2 += '1';
                             }
                         }
-                        val_list.push( ( 00 + parseInt(bitmap_row1, 2).toString(16) ).slice(-2) );
-                        val_list.push( ( 00 + parseInt(bitmap_row2, 2).toString(16) ).slice(-2) );
+                        //val_list.push( ( 00 + parseInt(bitmap_row1, 2).toString(16) ).slice(-2) );
+                        //val_list.push( ( 00 + parseInt(bitmap_row2, 2).toString(16) ).slice(-2) );
+                        table1.push( ( 00 + parseInt(bitmap_row1, 2).toString(16) ).slice(-2) );
+                        table2.push( ( 00 + parseInt(bitmap_row2, 2).toString(16) ).slice(-2) );
                     }
-                    textarea.value += "    .db " + val_list.map(x => "$"+x).join(", ") + "\n";
-                    if(i==16){textarea.value += "loadBackgroundChr: \n"}
+                    if(i==16*16){textarea.value += "loadBackgroundChr: \n"}
+                    //textarea.value += "    .db " + val_list.map(x => "$"+x).join(", ") + "\n";
+                    textarea.value += "    .db " + table1.map(x => "$"+x).join(", ") + "\n";
+                    textarea.value += "    .db " + table2.map(x => "$"+x).join(", ") + "\n";
+                    
                 }
                 textarea.select();
             }
